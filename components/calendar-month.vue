@@ -52,7 +52,7 @@
                                     :key="event.cellIndex"
                                     v-show="event.cellIndex <= eventLimit"
                                     @click="selectEvent(event, $event)"
-                                    @update-event="updateEvent(event)"
+                                    @update-event="updateEvent"
                                 )
                                     template(slot-scope="p")
                                         slot(
@@ -88,15 +88,14 @@
                             :event="event"
                             :key="event.cellIndex"
                             @click="selectEvent(event, $event)"
-                            @update-event="updateEvent(event)"
+                            @update-event="updateEvent"
                         )
 </template>
 
 <script type="text/babel">
 import moment from 'moment'
-import CalendarEvent from './components/event'
-import CalendarMoreEvent from './components/more-event'
-import Month from './mixins/month'
+import VEvent from './event'
+import Month from '../mixins/month'
 
 export default {
     name: 'v-calendar-month',
@@ -124,13 +123,12 @@ export default {
     computed: {
         moreTitle() {
             if (!this.selectDay.date) return ''
-            return moment(this.selectDay.date).format('ll')
+            return this.selectDay.date.format('ll')
         }
     },
 
     methods : {
         getCalendar() {
-            // calculate 2d-array of each month
             let monthViewStartDate = this.getMonthViewStartDate(this.currentMonth, this.firstDay)
             let calendar = []
 
@@ -213,7 +211,6 @@ export default {
 
         computePos(target) {
             let eventRect = target.getBoundingClientRect()
-            // console.log(eventRect);
             let calendarRect = this.$refs.dates.getBoundingClientRect()
             return {
                 left: eventRect.left - calendarRect.left,
@@ -223,55 +220,77 @@ export default {
 
         selectEvent(event, DOMevent) {
             if (!event.isShow) return
-            let pos = this.computePos(DOMevent.target)
-            this.$emit('select-event', event, DOMevent, pos)
+            let position = this.computePos(DOMevent.target)
+            this.$emit('select-event', event, DOMevent, position)
         },
 
-        dragenter(event) {
+        dragenter(DOMevent) {
         },
 
-        dragleave(event) {
+        dragleave(DOMevent) {
         },
 
-        dragover(event) {
-            if (event.preventDefault) event.preventDefault()
+        dragover(DOMevent) {
+            if (DOMevent.preventDefault) DOMevent.preventDefault()
 
-            var type = event.dataTransfer.getData('type')
-            var data = JSON.parse(event.dataTransfer.getData('data'))
-            var timestamp = moment(event.target.dataset.timestamp, ['X'])
+            var type = DOMevent.dataTransfer.getData('type')
+            var data = JSON.parse(DOMevent.dataTransfer.getData('data'))
+            var date = moment(DOMevent.target.dataset.timestamp, ['X'])
+            switch (type) {
+                case 'new':
+                    data.start = date
+                    data.end = date.add(data.duration, 'days')
+                    break
+                case 'move':
+                    let originalStart = moment(data.start)
+                    let originalEnd = moment(data.end)
+                    let difference = originalEnd.diff(originalStart, 'days')
+                    data.start = date
+                    data.end = date.add(difference, 'days')
+                    break
+                case 'resize-start':
+                    if (date.isBefore(data.end)) {
+                        data.start = date
+                    }
+                    break
+                case 'resize-end':
+                    if (date.isAfter(data.start) || date.isSame(data.start)) {
+                        data.end = date
+                    }
+                    break
+            }
             this.temporaryEvent = data
         },
 
-        drop(event) {
-            if (event.preventDefault) event.preventDefault()
-            var type = event.dataTransfer.getData('type')
-            var data = JSON.parse(event.dataTransfer.getData('data'))
-            var timestamp = moment(event.target.dataset.timestamp, ['X'])
+        drop(DOMevent) {
+            if (DOMevent.preventDefault) DOMevent.preventDefault()
+
+            var type = DOMevent.dataTransfer.getData('type')
+            var data = JSON.parse(DOMevent.dataTransfer.getData('data'))
+            var date = moment(DOMevent.target.dataset.timestamp, ['X'])
             switch (type) {
                 case 'new':
-                    data.start = timestamp.format(this.format)
-                    data.end = timestamp.add(data.duration, 'days').format(this.format)
+                    data.start = date
+                    data.end = date.add(data.duration, 'days')
                     this.$emit('new-event', data)
                     break
                 case 'move':
-                    var originalStart = moment(data.start)
-                    var originalEnd = moment(data.end)
-                    var difference = originalEnd.diff(originalStart, 'days')
-                    data.start = moment(timestamp).format(this.format)
-                    data.end = moment(timestamp).add(difference, 'days').format(this.format)
+                    let originalStart = moment(data.start)
+                    let originalEnd = moment(data.end)
+                    let difference = originalEnd.diff(originalStart, 'days')
+                    data.start = date
+                    data.end = date.add(difference, 'days')
                     this.updateEvent(data)
                     break
                 case 'resize-start':
-                    var start = moment(timestamp)
-                    if (start.isBefore(data.end)) {
-                        data.start = start.format(this.format)
+                    if (date.isBefore(data.end)) {
+                        data.start = date
                         this.updateEvent(data)
                     }
                     break
                 case 'resize-end':
-                    var end = moment(timestamp)
-                    if (end.isAfter(data.start) || end.isSame(data.start)) {
-                        data.end = end.format(this.format)
+                    if (date.isAfter(data.start) || date.isSame(data.start)) {
+                        data.end = date
                         this.updateEvent(data)
                     }
                     break
@@ -279,6 +298,12 @@ export default {
         },
 
         updateEvent(event) {
+            if (!moment.isMoment(event.start)) {
+                event.start = moment(event.start)
+            }
+            if (!moment.isMoment(event.end)) {
+                event.end = moment(event.end)
+            }
             this.$emit('update-event', event)
         }
     },
@@ -288,7 +313,7 @@ export default {
     ],
 
     components: {
-        'v-event': CalendarEvent
+        VEvent
     }
 }
 

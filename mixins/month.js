@@ -9,10 +9,6 @@ export default {
             type: String,
             default: 'en'
         },
-        format: {
-            type: String,
-            default: 'X'
-        },
         firstDay: {
             type: [Number, String],
             validator(val) {
@@ -36,22 +32,26 @@ export default {
         if (!this.day) {
             this.updateMonth(this.currentDay)
         } else {
-            this.currentDay = moment(this.day).startOf('day')
+            this.currentDay = {
+                start: moment(this.day).startOf('day'),
+                end: moment(this.day).endOf('day')
+            }
         }
         if (!this.month) {
             this.updateMonth(this.currentMonth)
         } else {
             this.currentMonth = moment(this.month).startOf('month')
         }
-        this.currentDates = this.getCalendar()
     },
 
     data() {
         return {
-            currentDay: moment().startOf('day'),
+            currentDay: {
+                start: moment().startOf('day'),
+                end: moment().endOf('day')
+            },
             currentMonth: moment().startOf('month'),
-            selectDay: {},
-            currentDates: []
+            selectDay: {}
         }
     },
 
@@ -61,13 +61,12 @@ export default {
         },
         month(date){
             this.currentMonth = moment(date).startOf('month')
-        },
-        events: {
-            handler: function (val, oldVal) {
-                console.log(this.events);
-                this.currentDates = this.getCalendar()
-            },
-            deep: true
+        }
+    },
+
+    computed: {
+        currentDates() {
+            return this.getCalendar()
         }
     },
 
@@ -76,21 +75,29 @@ export default {
             this.currentMonth = firstDayOfMonth
 
             let emit = {
-                month: firstDayOfMonth.format(this.format),
-                viewStart: this.getMonthViewStartDate(firstDayOfMonth).format(this.format),
-                viewEnd: this.getMonthViewEndDate(firstDayOfMonth).format(this.format)
+                month: firstDayOfMonth,
+                viewStart: this.getMonthViewStartDate(firstDayOfMonth),
+                viewEnd: this.getMonthViewEndDate(firstDayOfMonth)
             }
 
             this.$emit('update-month', emit)
         },
 
         updateDay(day, DOMevent) {
-            this.currentDay = moment(day.date).startOf('day')
+            var date = moment(day.date)
+            if (DOMevent.shiftKey) {
+
+            } else {
+                this.currentDay = {
+                    start: date.startOf('day'),
+                    end: date.endOf('day')
+                }
+            }
+
             let emit = {
-                day: day.date.format(this.format),
-                month: moment(day.date).startOf('month').format(this.format),
-                viewStart: this.getMonthViewStartDate(day).format(this.format),
-                viewEnd: this.getMonthViewEndDate(day).format(this.format)
+                day: day.date,
+                viewStart: this.getMonthViewStartDate(day),
+                viewEnd: this.getMonthViewEndDate(day)
             }
 
             this.$emit('update-day', emit, DOMevent)

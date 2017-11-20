@@ -11,8 +11,11 @@ export default {
         draggable: {
             type: Boolean,
             default: true
+        },
+        resizeable: {
+            type: Boolean,
+            default: true
         }
-
     },
 
     data() {
@@ -22,28 +25,24 @@ export default {
     },
 
     methods: {
-        dragstart(event) {
+        dragstart(DOMevent) {
             this.dragging = true
-            const dataTransfer = event.dataTransfer
+            let dataTransfer = DOMevent.dataTransfer
             dataTransfer.effectAllowed = 'move';
             dataTransfer.setData('type', 'move')
             dataTransfer.setData('data', JSON.stringify(this.event))
         },
 
-        dragend(event) {
+        dragend(DOMevent) {
             if (this.draggable) {
                 this.dragging = false
             }
         },
 
-        selectEvent(event) {
-            this.$emit('select-event', this.event, event)
-        },
-
-        updateEvent(event) {
+        updateEvent(DOMevent) {
             if (this.changed) {
                 this.changed = false
-                this.$emit('update-event', this.event)
+                this.$emit('update-event', this.event, DOMevent)
             }
         },
 
@@ -71,7 +70,7 @@ export default {
             }
 
             if (!this.event.isShow) {
-                classes.push('is-opacity')
+                classes.push('is-hidden')
             }
 
             return classes
@@ -81,8 +80,14 @@ export default {
             let styles = {}
 
             if (this.event.color) {
-                styles['background-color'] = this.event.color
-                styles['color'] = fontColorContrast(this.event.color)
+                let color = this.event.color
+                if (typeof color === 'string') {
+                    styles['background-color'] = color
+                    styles['color'] = fontColorContrast(color)
+                } else {
+                    styles['background-color'] = color.background
+                    styles['color'] = color.text
+                }
             }
 
             return styles

@@ -41,7 +41,7 @@
 
 <script type="text/babel">
 import moment from 'moment'
-import Month from './mixins/month'
+import Month from '../mixins/month'
 
 export default {
     name: 'v-calendar-mini-month',

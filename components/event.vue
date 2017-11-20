@@ -3,40 +3,40 @@
         class="event-item"
         :class="cssClasses"
         :style="styles"
-        @click="selectEvent"
     )
-        div(
-            class="drag-handle"
+        VDraggable(
+            :draggable="isStart && resizeable"
+            :event="event"
+            type="resize-start"
+            class="resize-start-handle"
+        )
+        VDraggable(
             :draggable="draggable"
-            @dragstart="dragstart"
-            @dragend="dragend"
+            :event="event"
+            type="move"
+            class="drag-handle"
         )
             input(
                 v-if="showTitle"
                 v-model="event.title"
                 @change="changeOccurred"
-                @blur="updateEvent(event)"
+                @blur="updateEvent"
                 placeholder="(no title)"
             )
-        v-draggable-handle(
-            v-if="isEnd && resizeable"
+        VDraggable(
+            :draggable="isEnd && resizeable"
             :event="event"
+            type="resize-end"
+            class="resize-end-handle"
         )
 </template>
 
 <script type="text/babel">
 import event from '../mixins/event'
-import draggableHandle from './draggable-handle'
+import VDraggable from './draggable'
 
 export default {
     name: 'v-calender-event',
-
-    props: {
-        resizeable: {
-            type: Boolean,
-            default: true
-        }
-    },
 
     computed: {
         showTitle() {
@@ -45,7 +45,7 @@ export default {
     },
 
     components: {
-        'v-draggable-handle': draggableHandle
+        VDraggable
     },
 
     mixins: [
@@ -62,33 +62,43 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     position: relative;
-    &.is-opacity{
+    &.is-hidden{
         opacity: 0;
     }
     input{
-        cursor: grab;
         width: 100%;
         background: transparent;
         border: 0;
         color: inherit;
     }
 }
-.drag-handle{
-    -moz-user-select: none;
-    -khtml-user-select: none;
-    -webkit-user-select: none;
+.draggable{
     user-select: none;
     -khtml-user-drag: element;
     -webkit-user-drag: element;
-    cursor: grab;
     position: absolute;
     top: 0;
-    right: 0;
     bottom: 0;
-    left: 0;
+}
+.drag-handle{
+    position: absolute;
+    right: 10px;
+    left: 10px;
     display: block;
-    &.dragging{
-        cursor: grabbing;
+    &,
+    *{
+        cursor: move;
     }
+}
+.resize-start-handle{
+    left: 0;
+    width: 10px;
+    cursor: w-resize;
+}
+
+.resize-end-handle{
+    right: 0;
+    width: 10px;
+    cursor: e-resize;
 }
 </style>

@@ -17,7 +17,7 @@ export default {
     name: 'v-new-event',
 
     props: {
-        object: Object
+        event: Object
     },
 
     data() {
@@ -32,7 +32,7 @@ export default {
             const dataTransfer = event.dataTransfer
             dataTransfer.effectAllowed = 'copy';
             dataTransfer.setData('type', 'new')
-            dataTransfer.setData('data', JSON.stringify(this.object))
+            dataTransfer.setData('data', JSON.stringify(this.event))
         },
 
         dragend(event) {
@@ -50,9 +50,9 @@ export default {
         styles() {
             let styles = {}
 
-            if (this.object.color) {
-                styles['background-color'] = this.object.color
-                styles['color'] = fontColorContrast(this.object.color)
+            if (this.event.color) {
+                styles['background-color'] = this.event.color
+                styles['color'] = fontColorContrast(this.event.color)
             }
 
             return styles
